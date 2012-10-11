@@ -1,4 +1,0 @@
-slice
-=====
-
-Slices in C

@@ -1,0 +1,38 @@
+ slice - Slices in C
+ BSD license.
+ by Sven Nilsen, 2012
+ http://www.cutoutpro.com
+ 
+ Version: 0.000 in angular degrees version notation
+ http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
+
+I like to write stuff in the language I find convenient and then translate
+the algorithm later to the language or environment I need it for.
+
+A programming language I like, Go, has a cool way of referring to arrays.
+I made this library to make translation between C and Go easier,
+but also to learn more about slices in general.
+
+	#include "slice.h"
+	SLICE_TYPE_DECLARE(<type>)
+
+Therer is no .c file, everything is implemented C preprosessor macroes.
+There is a custom assert macro in case you don't want to include <assert.h>.
+If NDEBUG is defined, then boundary checks will not be performed at runtime.
+
+slice_<type>	
+	ptr	Pointer to arrays (does not have to be first item)
+	len	The length of elements (can be varied).
+	cap	The capacity of the array.
+
+In this library, I chose to make all members immutable except for the 'len' member.
+This also means you can not assign a variable twice, but you can 'push', 'pop' and 'cut'.
+
+Use typedef if your slice type is a pointer type:
+
+	SLICE_TYPE_DECLARE(int*)	// WRONG
+
+	typedef int* int_t;
+	SLICE_TYPE_DECLARE(int_t)	// RIGHT
+
+For more information, read "slice.h".
