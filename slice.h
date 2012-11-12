@@ -76,28 +76,7 @@
         ...
     }
  
- The only member that can be modified is the 'len' member.
- You can not assign a new slice value to an existing slice.
- 
-    a = slice(a, 0, len-2); // WRONG
-    a.len = a.len - 2;  // RIGHT
-    slice_int b = slice(a, 0, a.len-2);   // RIGHT
- 
- Because slices are not assignable, you can not declare variables outside loops.
- With gcc optimization turned on "-O3", the speed is about the same.
- 
-    slice_int b;    // WRONG
-    for (i = 0; i < n; i += 2) {
-        b = slice(a, i, i+2);
-        b.ptr[0] = i;
-        b.ptr[1] = -i;
-    }
- 
-    for (i = 0; i < n; i += 2) {    // RIGHT
-        slice_int b = slice(a, i, i+2);
-        b.ptr[0] = i;
-        b.ptr[1] = -i;
-    }
+ The only member that should be modified is the 'len' member.
  
  When appending two slices, you can either use 'copy' or 'merge'.
  
@@ -129,7 +108,7 @@ printf("Assertion failed: (%s), function %s, file %s, line %i.\n", \
     
     // Declare type.
 #define SLICE_TYPE_DECLARE(type) \
-typedef struct {type * const ptr; int len; const int cap;} slice_##type;
+typedef struct {type * ptr; int len; int cap;} slice_##type;
 
     // Returns a part of another slice.
 #define slice(a, start, end) \
