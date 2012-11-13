@@ -4,8 +4,11 @@
  by Sven Nilsen, 2012
  http://www.cutoutpro.com
  
- Version: 0.000 in angular degrees version notation
+ Version: 0.001 in angular degrees version notation
  http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
+ 
+ 001	Made slice mutable for easier programming.
+ 
  */
 /*
  Redistribution and use in source and binary forms, with or without
