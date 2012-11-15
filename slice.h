@@ -90,6 +90,12 @@
     The type of slice returned is the same as the first parameter.
     The array is dynamically allocated and must be released with free(c.ptr).
  
+ TYPICAL ERRORS
+ 
+	warning: data definition has no type or storage class
+ 
+		This will appear if you type SLICE_TYPE_DECLARE wrong.
+ 
  */
 
 #ifdef __cplusplus
