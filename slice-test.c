@@ -1,3 +1,11 @@
+#if 0
+#!/bin/bash
+gcc -o slice-test *.c -Wall -Wfatal-errors -O3
+if [ "$?" = "0" ]; then
+	time ./slice-test
+fi
+exit
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +16,10 @@
 #include "slice.h"
 
 SLICE_TYPE_DECLARE(int)
+
+typedef char * string;
+
+SLICE_TYPE_DECLARE(string);
 
 #define Err() do {printf("%i Error!\n", __LINE__); exit(1);} while (0)
 
@@ -140,6 +152,17 @@ void test8(void)
     free(a.ptr);
 }
 
+void test9(void)
+{
+	string arr[] = {"Hello", "this", "is", "an", "array", "of", "strings"};
+	slice_string a = slice_array(arr, 0, sizeof(arr)/sizeof(string));
+	
+	assert(a.cap == sizeof(arr)/sizeof(string));
+	assert(a.len == sizeof(arr)/sizeof(string));
+	assert(strcmp(a.ptr[0], "Hello") == 0);
+	assert(strcmp(a.ptr[a.len-1], "strings") == 0);
+}
+
 int main(int argc, char *argv[])
 {
     test1();
@@ -150,6 +173,7 @@ int main(int argc, char *argv[])
     test6();
     test7();
     test8();
+	test9();
     
     return 0;
 }
