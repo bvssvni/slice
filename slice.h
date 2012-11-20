@@ -4,9 +4,10 @@
  by Sven Nilsen, 2012
  http://www.cutoutpro.com
  
- Version: 0.001 in angular degrees version notation
+ Version: 0.002 in angular degrees version notation
  http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
  
+ 002	Changed type 'slice_<type>' to '<type>_slice' to avoid naming collision.
  001	Made slice mutable for easier programming.
  
  */
@@ -55,7 +56,7 @@
  The best practice is to use a main slice that cover the whole array,
  and keep track of slice until there are no more slices referring to it.
  
-    slice_int a = slice_make(int, 10);
+    int_slice a = slice_make(int, 10);
     ...
     free(a.ptr);
  
@@ -83,8 +84,12 @@
  
  When appending two slices, you can either use 'copy' or 'merge'.
  
-    int copy(a, b) - Puts items from b into a up to min(a.len, b.len).
-    Returns number of copied elements.
+    int copy(a, b) - Puts items from _b_ into _a_ up to min(a.len, b.len).
+    Returns number of copied elements. If _a_ contains more items than
+	copied, the operation can be thought of as overwriting.
+ 
+	int append(a, b) - Appends items from _b_ to _a_.
+	Returns the number of appened items.
  
     c = merge(a, b) - Creates a new array filled with content of two slices.
     The type of slice returned is the same as the first parameter.
@@ -117,7 +122,7 @@ printf("Assertion failed: (%s), function %s, file %s, line %i.\n", \
     
     // Declare type.
 #define SLICE_TYPE_DECLARE(type) \
-typedef struct {type * ptr; int len; int cap;} slice_##type;
+typedef struct type##_slice {type * ptr; int len; int cap;} type##_slice;
 
     // Returns a part of another slice.
 #define slice(a, start, end) \
@@ -153,10 +158,19 @@ assert((a).len >= 0)
 ((a).cap < (b).len ? (a).cap : (b).len)
 
     // Copies content from _b_ into _a_ and returns number of items copied.
+	// The entries in _a_ in that range will be overwritten.
 #define slice_copy(a, b) \
 (memcpy((a).ptr, (b).ptr, slice_minlen(a,b) * slice_itemsize(b)) ? \
-slice_minlen(a, b) : 0)
+a.len = ((a).len >= (b).len ? (a).len : \
+(a).cap < (b).len ? (a).cap : (b).len) : 0)
     
+	// Appends content from _b_ to _a_ and returns number of items appened.
+#define slice_append(a, b) \
+(memcpy((a).ptr+(a).len, (b).ptr, \
+((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) \
+* slice_itemsize(b)) ? \
+a.len += ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) : 0)
+	
     // Cuts a range from slice.
 #define slice_cut(a, start, end) \
 do {assert((end) >= (start)); memcpy((a).ptr + (start), (a).ptr + (end), \
@@ -180,6 +194,12 @@ do {memset((a).ptr, 0, slice_itemsize(a) * (a).len);} while (0)
 (b).ptr, (b).len * slice_itemsize(b)) - (a).len, \
 .len = (a).len + (b).len, .cap = (a).len + (b).len}
     
+#endif
+	
+// Put this in the header to allow namespace import.
+#ifndef FUNC_GUARD
+#define FUNC_GUARD
+#define func(ns, n) static __typeof__(ns##_##n) * const n = ns##_##n
 #endif
 
 #ifdef __cplusplus

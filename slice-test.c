@@ -27,8 +27,8 @@ void test1(void)
 {
     int a[] = {1,2,3,4};
     int an = sizeof(a)/sizeof(int);
-    slice_int b = slice_array(a, 0, an);
-    slice_int c = slice(b, 1, 2);
+    int_slice b = slice_array(a, 0, an);
+    int_slice c = slice(b, 1, 2);
     assert(c.ptr == a+1);
     assert(c.len == 1);
     assert(c.cap == 3);
@@ -37,12 +37,12 @@ void test1(void)
 void test2(void)
 {
     int a[] = {1,2,3,4};
-    slice_int b = slice_array(a, 0, 2);
+    int_slice b = slice_array(a, 0, 2);
     
     int size = slice_itemsize(b);
     assert(size == 4);
     
-    slice_int c = slice_array(a, 2, 4);
+    int_slice c = slice_array(a, 2, 4);
     assert(c.ptr[0] == 3);
     assert(c.ptr[1] == 4);
     int cut = slice_minlen(b, c);
@@ -59,9 +59,9 @@ void test2(void)
 void test3(void)
 {
     int a[] = {1,2,3,4};
-    slice_int b = slice_array(a, 0, 2);
-    slice_int c = slice_array(a, 2, 4);
-    slice_int d = slice_merge(b, c);
+    int_slice b = slice_array(a, 0, 2);
+    int_slice c = slice_array(a, 2, 4);
+    int_slice d = slice_merge(b, c);
     assert(a != d.ptr);
     assert(d.ptr[0] == 1);
     assert(d.ptr[1] == 2);
@@ -72,7 +72,7 @@ void test3(void)
 
 void test4(void)
 {
-    slice_int a = slice_make(int, 6);
+    int_slice a = slice_make(int, 6);
     assert(a.ptr[0] == 0);
     assert(a.ptr[1] == 0);
     free(a.ptr);
@@ -80,8 +80,8 @@ void test4(void)
 
 void test5(void)
 {
-    slice_int a = slice_make(int, 6);
-    slice_int b = slice(a, 0, 4);
+    int_slice a = slice_make(int, 6);
+    int_slice b = slice(a, 0, 4);
     assert(b.len == 4);
     assert(b.cap == 6);
     free(a.ptr);
@@ -90,10 +90,10 @@ void test5(void)
 void test6(void)
 {
     int n = 6;
-    slice_int a = slice_make(int, n);
+    int_slice a = slice_make(int, n);
     int i;
     for (i = 0; i < n; i++) {
-        slice_int b = slice(a, i, i+1);
+        int_slice b = slice(a, i, i+1);
         b.ptr[0] = i;
     }
     assert(a.ptr[0] == 0);
@@ -108,7 +108,7 @@ void test6(void)
 void test7(void)
 {
     int n = 6;
-    slice_int a = slice_make(int, n);
+    int_slice a = slice_make(int, n);
     int i;
     for (i = 0; i < n; i++) {
         slice_push(a, i);
@@ -133,7 +133,7 @@ void test7(void)
 void test8(void)
 {
     int n = 6;
-    slice_int a = slice_make(int, n);
+    int_slice a = slice_make(int, n);
     int i;
     for (i = 0; i < n; i++) {
         slice_push(a, i);
@@ -152,15 +152,64 @@ void test8(void)
     free(a.ptr);
 }
 
-void test9(void)
+void test_string_array_9(void)
 {
 	string arr[] = {"Hello", "this", "is", "an", "array", "of", "strings"};
-	slice_string a = slice_array(arr, 0, sizeof(arr)/sizeof(string));
+	string_slice a = slice_array(arr, 0, sizeof(arr)/sizeof(string));
 	
 	assert(a.cap == sizeof(arr)/sizeof(string));
 	assert(a.len == sizeof(arr)/sizeof(string));
 	assert(strcmp(a.ptr[0], "Hello") == 0);
 	assert(strcmp(a.ptr[a.len-1], "strings") == 0);
+}
+
+void test_copy_10(void)
+{
+	int_slice a = slice_make(int, 10);
+	int_slice b = slice_make(int, 3);
+	int i;
+	for (i = 0; i < 3; i++) slice_push(b, i);
+	
+	assert(b.ptr[0] == 0);
+	assert(b.ptr[1] == 1);
+	assert(b.ptr[2] == 2);
+	
+	assert(slice_copy(a, b) == 3);
+	
+	assert(a.ptr[0] == 0);
+	assert(a.ptr[1] == 1);
+	assert(a.ptr[2] == 2);
+	assert(a.ptr[3] == 0);
+	
+	assert(a.len == 3);
+	
+	free(a.ptr);
+	free(b.ptr);
+}
+
+void test_append_11(void)
+{
+	int_slice a = slice_make(int, 10);
+	int_slice b = slice_make(int, 3);
+	int i;
+	for (i = 0; i < 3; i++) {
+		slice_push(a, i);
+		slice_push(b, i);
+	}
+	
+	slice_append(a, b);
+	
+	assert(a.len == 6);
+	assert(a.ptr[0] == 0);
+	assert(a.ptr[1] == 1);
+	assert(a.ptr[2] == 2);
+	assert(a.ptr[3] == 0);
+	assert(a.ptr[4] == 1);
+	assert(a.ptr[5] == 2);
+	assert(a.ptr[6] == 0);
+	
+	free(a.ptr);
+	free(b.ptr);
 }
 
 int main(int argc, char *argv[])
@@ -173,7 +222,9 @@ int main(int argc, char *argv[])
     test6();
     test7();
     test8();
-	test9();
+	test_string_array_9();
+	test_copy_10();
+	test_append_11();
     
     return 0;
 }
