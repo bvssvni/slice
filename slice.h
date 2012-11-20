@@ -139,7 +139,7 @@ __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
     // Declares a new array with a given capacity.
     // The length is set to 0.
 #define slice_make(type, capacity) \
-{.ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity), \
+(type##_slice){.ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity), \
 .cap = capacity}
     
     // Push items at end of slice.
