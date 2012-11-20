@@ -161,7 +161,7 @@ assert((a).len >= 0)
 	// The entries in _a_ in that range will be overwritten.
 #define slice_copy(a, b) \
 (memcpy((a).ptr, (b).ptr, slice_minlen(a,b) * slice_itemsize(b)) ? \
-a.len = ((a).len >= (b).len ? (a).len : \
+(a).len = ((a).len >= (b).len ? (a).len : \
 (a).cap < (b).len ? (a).cap : (b).len) : 0)
     
 	// Appends content from _b_ to _a_ and returns number of items appened.
@@ -169,7 +169,7 @@ a.len = ((a).len >= (b).len ? (a).len : \
 (memcpy((a).ptr+(a).len, (b).ptr, \
 ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) \
 * slice_itemsize(b)) ? \
-a.len += ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) : 0)
+(a).len += ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) : 0)
 	
     // Cuts a range from slice.
 #define slice_cut(a, start, end) \
