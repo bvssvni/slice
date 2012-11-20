@@ -195,12 +195,6 @@ do {memset((a).ptr, 0, slice_itemsize(a) * (a).len);} while (0)
 .len = (a).len + (b).len, .cap = (a).len + (b).len}
     
 #endif
-	
-// Put this in the header to allow namespace import.
-#ifndef FUNC_GUARD
-#define FUNC_GUARD
-#define func(ns, n) static __typeof__(ns##_##n) * const n = ns##_##n
-#endif
 
 #ifdef __cplusplus
 }
