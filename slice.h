@@ -151,7 +151,7 @@ assert((a).len >= 0)
     
     // Returns the item size in bytes of a slice.
 #define slice_itemsize(a) \
-((unsigned long)((a).ptr + 1) - (unsigned long)(a.ptr))
+((unsigned long)((a).ptr + 1) - (unsigned long)((a).ptr))
 
     // Returns the number of items in _b_ that fits in _a_.
 #define slice_minlen(a, b) \
