@@ -124,6 +124,7 @@ void test7(void)
     int c;
     for (i = 0; i < n; i++) {
         c = slice_pop(a);
+		assert(c == n-i-1);
     }
     assert(a.len == 0);
     

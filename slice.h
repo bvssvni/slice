@@ -124,10 +124,12 @@ printf("Assertion failed: (%s), function %s, file %s, line %i.\n", \
 #define SLICE_TYPE_DECLARE(type) \
 typedef struct type##_slice {type * ptr; int len; int cap;} type##_slice;
 
-    // Returns a part of another slice.
-#define slice(a, start, end) \
-(typeof(a)){.ptr = (a).ptr + (start), .len = (end) - (start),\
-.cap = (a).cap - (start)}
+	// Returns part of another slice.
+#define slice(a, start, end) ({\
+__typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
+(__typeof__(a)){.ptr = _a->ptr + _start, .len = _end - _start, \
+.cap = _a->cap - _start};\
+})
 
     // Returns a part of an array.
     // This range determine the capacity of the slice.
@@ -141,21 +143,23 @@ typedef struct type##_slice {type * ptr; int len; int cap;} type##_slice;
 .cap = capacity}
     
     // Push items at end of slice.
-#define slice_push(a, item) \
-do {assert((a).len < (a).cap); (a).ptr[(a).len++] = item;} while (0)
+#define slice_push(a, item) do {__typeof__(a) *_a = &(a);\
+assert(_a->len < _a->cap); _a->ptr[_a->len++] = item;} while (0)
     
     // Pops item from end of slice.
 #define slice_pop(a) \
-(--(a).len >= 0 ? (a).ptr[(a).len] : (typeof(*(a).ptr)){0}); \
-assert((a).len >= 0)
-    
+({__typeof__(a) *_a = &(a); assert(_a->len > 0);\
+(--_a->len >= 0 ? _a->ptr[_a->len] : (typeof(*_a->ptr)){0}); \
+})
+	
     // Returns the item size in bytes of a slice.
 #define slice_itemsize(a) \
 ((unsigned long)((a).ptr + 1) - (unsigned long)((a).ptr))
 
     // Returns the number of items in _b_ that fits in _a_.
 #define slice_minlen(a, b) \
-((a).cap < (b).len ? (a).cap : (b).len)
+({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
+(_a->cap < _b->len ? _a->cap : _b->len);})
 
 #define slice_mincap(a, b) \
 ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len)
@@ -169,31 +173,38 @@ assert((a).len >= 0)
     
 	// Appends content from _b_ to _a_ and returns number of items appened.
 #define slice_append(a, b) \
-(memcpy((a).ptr+(a).len, (b).ptr, slice_mincap(a,b) * slice_itemsize(b)) ? \
-slice_mincap(a,b)+(((a).len += slice_mincap(a,b))&&0) : 0)
+({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
+(memcpy(_a->ptr+_a->len, _b->ptr, slice_mincap(*_a,*_b) * slice_itemsize(*_b)) ? \
+slice_mincap(*_a,*_b)+((_a->len += slice_mincap(*_a,*_b))&&0) : 0);})
 	
     // Cuts a range from slice.
 #define slice_cut(a, start, end) \
-do {assert((end) >= (start)); memcpy((a).ptr + (start), (a).ptr + (end), \
-slice_itemsize(a) * ((a).cap - (end))); (a).len -= (end)-(start);} while (0)
+do {int _start = (start);\
+int _end = (end);\
+__typeof__(a) *_a = &(a);\
+assert(_end >= _start); memcpy(_a->ptr + _start, _a->ptr + _end, \
+slice_itemsize(a) * (_a->cap - _end)); _a->len -= _end-_start;} while (0)
     
     // Deletes item at index, decrementing the indices of the rest.
 #define slice_delete(a, index) \
-do {memcpy((a).ptr + (index), (a).ptr + (index) + 1, \
-slice_itemsize(a) * ((a).cap - (index) - 1)); (a).len--;} while (0)
+do {__typeof__(a) *_a = &(a); int _index = (index);\
+memcpy(_a->ptr + _index, _a->ptr + _index + 1, \
+slice_itemsize(*_a) * (_a->cap - _index - 1)); _a->len--;} while (0)
 
     // Clears all items in a slice.
 #define slice_clear(a) \
-do {memset((a).ptr, 0, slice_itemsize(a) * (a).len);} while (0)
+do {__typeof__(a) *_a = &(a);\
+memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
     
     // Appends two slices that must be released when no longer needed.
 #define slice_merge(a, b) \
+({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (typeof(a)){.ptr = \
-(typeof((a).ptr))memcpy((a).len + \
-(typeof((a).ptr))memcpy(malloc(slice_itemsize(a) * \
-((a).len + (b).len)), (a).ptr, (a).len * slice_itemsize(a)), \
-(b).ptr, (b).len * slice_itemsize(b)) - (a).len, \
-.len = (a).len + (b).len, .cap = (a).len + (b).len}
+(typeof(_a->ptr))memcpy(_a->len + \
+(typeof(_a->ptr))memcpy(malloc(slice_itemsize(*_a) * \
+(_a->len + _b->len)), _a->ptr, _a->len * slice_itemsize(*_a)), \
+_b->ptr, _b->len * slice_itemsize(*_b)) - _a->len, \
+.len = _a->len + _b->len, .cap = _a->len + _b->len};})
     
 #endif
 
