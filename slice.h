@@ -157,6 +157,9 @@ assert((a).len >= 0)
 #define slice_minlen(a, b) \
 ((a).cap < (b).len ? (a).cap : (b).len)
 
+#define slice_mincap(a, b) \
+((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len)
+	
     // Copies content from _b_ into _a_ and returns number of items copied.
 	// The entries in _a_ in that range will be overwritten.
 #define slice_copy(a, b) \
@@ -166,10 +169,8 @@ assert((a).len >= 0)
     
 	// Appends content from _b_ to _a_ and returns number of items appened.
 #define slice_append(a, b) \
-(memcpy((a).ptr+(a).len, (b).ptr, \
-((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) \
-* slice_itemsize(b)) ? \
-(a).len += ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len) : 0)
+(memcpy((a).ptr+(a).len, (b).ptr, slice_mincap(a,b) * slice_itemsize(b)) ? \
+slice_mincap(a,b)+(((a).len += slice_mincap(a,b))&&0) : 0)
 	
     // Cuts a range from slice.
 #define slice_cut(a, start, end) \

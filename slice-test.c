@@ -197,7 +197,9 @@ void test_append_11(void)
 		slice_push(b, i);
 	}
 	
-	slice_append(a, b);
+	int appened = slice_append(a, b);
+	// printf("%i\n", appened);
+	assert(appened == b.len);
 	
 	assert(a.len == 6);
 	assert(a.ptr[0] == 0);
