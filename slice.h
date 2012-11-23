@@ -210,7 +210,7 @@ do { \
 	if (_buffer->len + _items <= _buffer->cap) break; \
 	type##_slice _newbuffer = slice_make(type, _buffer->len + _block); \
 	slice_append(_newbuffer, *_buffer); \
-	slice_free(_buffer); \
+	slice_free(*_buffer); \
 	*_buffer = _newbuffer; \
 } while (0)
 	
