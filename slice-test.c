@@ -62,12 +62,16 @@ void test3(void)
     int_slice b = slice_array(a, 0, 2);
     int_slice c = slice_array(a, 2, 4);
     int_slice d = slice_merge(b, c);
+
+	assert(d.is_allocated);
+	
     assert(a != d.ptr);
     assert(d.ptr[0] == 1);
     assert(d.ptr[1] == 2);
     assert(d.ptr[2] == 3);
     assert(d.ptr[3] == 4);
-    free(d.ptr);
+
+    slice_free(d);
 }
 
 void test4(void)
@@ -75,7 +79,7 @@ void test4(void)
     int_slice a = slice_make(int, 6);
     assert(a.ptr[0] == 0);
     assert(a.ptr[1] == 0);
-    free(a.ptr);
+    slice_free(a);
 }
 
 void test5(void)
@@ -84,7 +88,9 @@ void test5(void)
     int_slice b = slice(a, 0, 4);
     assert(b.len == 4);
     assert(b.cap == 6);
-    free(a.ptr);
+	
+	slice_free(b);
+    slice_free(a);
 }
 
 void test6(void)
@@ -102,7 +108,7 @@ void test6(void)
     assert(a.ptr[3] == 3);
     assert(a.ptr[4] == 4);
     assert(a.ptr[5] == 5);
-    free(a.ptr);
+    slice_free(a);
 }
 
 void test7(void)
@@ -128,7 +134,7 @@ void test7(void)
     }
     assert(a.len == 0);
     
-    free(a.ptr);
+    slice_free(a);
 }
 
 void test8(void)
@@ -150,7 +156,7 @@ void test8(void)
     slice_clear(a);
     assert(a.ptr[0] == 0);
     
-    free(a.ptr);
+    slice_free(a);
 }
 
 void test_string_array_9(void)
@@ -184,8 +190,8 @@ void test_copy_10(void)
 	
 	assert(a.len == 3);
 	
-	free(a.ptr);
-	free(b.ptr);
+	slice_free(a);
+	slice_free(b);
 }
 
 void test_append_11(void)
@@ -211,23 +217,27 @@ void test_append_11(void)
 	assert(a.ptr[5] == 2);
 	assert(a.ptr[6] == 0);
 	
-	free(a.ptr);
-	free(b.ptr);
+	slice_free(a);
+	slice_free(b);
 }
 
 int main(int argc, char *argv[])
 {
-    test1();
-    test2();
-    test3();
-    test4();
-    test5();
-    test6();
-    test7();
-    test8();
-	test_string_array_9();
-	test_copy_10();
-	test_append_11();
+	int i;
+	int end = 1 << 23;
+	for (i = 0; i < end; i++) {
+		test1();
+		test2();
+		test3();
+		test4();
+		test5();
+		test6();
+		test7();
+		test8();
+		test_string_array_9();
+		test_copy_10();
+		test_append_11();
+	}
     
     return 0;
 }

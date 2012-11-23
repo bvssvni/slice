@@ -4,9 +4,12 @@
  by Sven Nilsen, 2012
  http://www.cutoutpro.com
  
- Version: 0.002 in angular degrees version notation
+ Version: 0.003 in angular degrees version notation
  http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
  
+ 003	Added standard headers for easier compiling.
+		Added 'check' macro that expands slice if items does not fit.
+		Added 'is_allocated' flag and 'slice_free'.
  002	Changed type 'slice_<type>' to '<type>_slice' to avoid naming collision.
  001	Made slice mutable for easier programming.
  
@@ -110,6 +113,10 @@ extern "C" {
 #ifndef SLICE_GUARD
 #define SLICE_GUARD
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+	
     // Create a simple assert if not declared for boundary checking.
     // If you want to remove boundary checks, put following at top your code:
     // #define NDEBUG
@@ -122,7 +129,12 @@ printf("Assertion failed: (%s), function %s, file %s, line %i.\n", \
     
     // Declare type.
 #define SLICE_TYPE_DECLARE(type) \
-typedef struct type##_slice {type * ptr; int len; int cap;} type##_slice;
+typedef struct type##_slice {\
+	int is_allocated;\
+	type * ptr;\
+	int len;\
+	int cap;\
+} type##_slice;
 
 	// Returns part of another slice.
 #define slice(a, start, end) ({\
@@ -139,7 +151,9 @@ __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
     // Declares a new array with a given capacity.
     // The length is set to 0.
 #define slice_make(type, capacity) \
-(type##_slice){.ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity), \
+(type##_slice){\
+.is_allocated = 1,\
+.ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity),\
 .cap = capacity}
     
     // Push items at end of slice.
@@ -151,6 +165,16 @@ assert(_a->len < _a->cap); _a->ptr[_a->len++] = item;} while (0)
 ({__typeof__(a) *_a = &(a); assert(_a->len > 0);\
 (--_a->len >= 0 ? _a->ptr[_a->len] : (typeof(*_a->ptr)){0}); \
 })
+	
+	// Sets item at index, expands the length if necessary.
+#define slice_set(a, index, item) do {\
+__typeof__(a) *_a = &(a);\
+int _index = (index);\
+__typeof__(item) _item = (item);\
+assert(_index < _a->cap);\
+_a->ptr[_index] = _item;\
+_a->len = _a->len <= _index ? _index+1 : _a->len;\
+} while (0)
 	
     // Returns the item size in bytes of a slice.
 #define slice_itemsize(a) \
@@ -177,6 +201,19 @@ assert(_a->len < _a->cap); _a->ptr[_a->len++] = item;} while (0)
 (memcpy(_a->ptr+_a->len, _b->ptr, slice_mincap(*_a,*_b) * slice_itemsize(*_b)) ? \
 slice_mincap(*_a,*_b)+((_a->len += slice_mincap(*_a,*_b))&&0) : 0);})
 	
+	// Expand the slice with block if items do not fit.
+#define slice_check(type, buffer, items, block) \
+do { \
+	__typeof__(buffer) *_buffer = &(buffer); \
+	int _items = (items); \
+	int _block = (block); \
+	if (_buffer->len + _items <= _buffer->cap) break; \
+	type##_slice _newbuffer = slice_make(type, _buffer->len + _block); \
+	slice_append(_newbuffer, *_buffer); \
+	slice_free(_buffer); \
+	*_buffer = _newbuffer; \
+} while (0)
+	
     // Cuts a range from slice.
 #define slice_cut(a, start, end) \
 do {int _start = (start);\
@@ -199,13 +236,24 @@ memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
     // Appends two slices that must be released when no longer needed.
 #define slice_merge(a, b) \
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
-(typeof(a)){.ptr = \
-(typeof(_a->ptr))memcpy(_a->len + \
-(typeof(_a->ptr))memcpy(malloc(slice_itemsize(*_a) * \
+(__typeof__(a)){.ptr = \
+(__typeof__(_a->ptr))memcpy(_a->len + \
+(__typeof__(_a->ptr))memcpy(malloc(slice_itemsize(*_a) * \
 (_a->len + _b->len)), _a->ptr, _a->len * slice_itemsize(*_a)), \
 _b->ptr, _b->len * slice_itemsize(*_b)) - _a->len, \
-.len = _a->len + _b->len, .cap = _a->len + _b->len};})
-    
+.len = _a->len + _b->len, .cap = _a->len + _b->len, .is_allocated = 1};})
+
+	// Releases a slice if it is allocated.
+#define slice_free(a) \
+do {__typeof__(a) *_a = &(a);\
+if (_a->is_allocated && _a->ptr != NULL) {\
+free(_a->ptr); *_a = (__typeof__(a)){};}} while (0)
+	
+#endif
+	
+#ifndef FUNC_GUARD
+#define FUNC_GUARD
+#define func(ns, n) static __typeof__(ns##_##n) * const n = ns##_##n
 #endif
 
 #ifdef __cplusplus
