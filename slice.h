@@ -221,7 +221,7 @@ do {__typeof__(a) *_a = &(a);\
 memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
     
 			// Appends two slices that must be released when no longer needed.
-#define slice_merge(a, b) \
+#define		slice_merge(a, b) \
 \
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (__typeof__(a)){.ptr = \
@@ -232,11 +232,47 @@ _b->ptr, _b->len * slice_itemsize(*_b)) - _a->len, \
 .len = _a->len + _b->len, .cap = _a->len + _b->len, .is_allocated = 1};})
 
 			// Releases a slice if it is allocated.
-#define slice_free(a) \
+#define		slice_free(a) \
 \
 do {__typeof__(a) *_a = &(a);\
 if (_a->is_allocated && _a->ptr != NULL) {\
 free(_a->ptr); *_a = (__typeof__(a)){};}} while (0)
+	
+			// Returns the sorted index by binary search mapping to a slice.
+			// This is the common way of sorting data, which is faster than
+			// moving the items around themselves.
+			// Returns a positive index if the item is found.
+			// Returns a negative index minus one of the smallest greater
+			// index if the item does not exists.
+			// The returned value can be used to insert new items.
+			// Requires 'int_slice'.
+			// The _f_ parameter is a function that compares two items.
+			// The arguments to this function should be pointers.
+			// int compare(<type> *a, <type> *b);
+#define		slice_binarysearch_sortedindex(arr, sortedindices, f, item) \
+	({\
+	__typeof__(item) *_item = &(item);\
+	__typeof__(arr) *_arr = &(arr);\
+	__typeof__(f) *_f = &(f);\
+	int_slice *_sortedindices = &(sortedindices);\
+	int _start = 0;\
+	int _end = _arr->len;\
+	int _mid;\
+	while (_end - _start >= 1) {\
+		_mid = _start + ((_end-_start)>>1);\
+		int _index = _sortedindices->ptr[_mid];\
+		int _compare = _f(_item, &_arr->ptr[_index]);\
+		if (_compare > 0) {\
+			_start = _mid + 1;\
+		} else if (_compare < 0) {\
+			_end = _mid;\
+		} else {\
+			break;\
+		}\
+	}\
+	if (_end-_start == 0) _mid = -(_end+1);\
+	_mid;\
+	})
 	
 #endif
 	

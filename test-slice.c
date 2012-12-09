@@ -17,6 +17,7 @@ exit
 #include "slice.h"
 
 slice_type(int);
+slice_type(double);
 
 typedef char * string;
 
@@ -266,6 +267,48 @@ void test_put_1(void)
 	slice_free(a);
 }
 
+int double_Compare(const double *a, const double *b)
+{
+	double aVal = *a;
+	double bVal = *b;
+	
+	if (aVal < bVal) return -1;
+	if (aVal > bVal) return 1;
+	
+	return 0;
+}
+
+int double_slice_SortedIndex
+(double_slice arr, int_slice sortedindices, double d)
+{
+	return slice_binarysearch_sortedindex
+	(arr, sortedindices, double_Compare, d);
+}
+
+void test_search_1()
+{
+	double_slice a = slice_make(double, 10);
+	slice_push(a, 1.0);
+	slice_push(a, 2.0);
+	slice_push(a, 3.0);
+	int_slice b = slice_make(int, 3);
+	slice_push(b, 0);
+	slice_push(b, 1);
+	slice_push(b, 2);
+	double val = 1.0;
+	assert(double_slice_SortedIndex(a, b, val) == 0);
+	val = 2.0;
+	assert(double_slice_SortedIndex(a, b, val) == 1);
+	val = 3.0;
+	assert(double_slice_SortedIndex(a, b, val) == 2);
+	val = 0.0;
+	assert(double_slice_SortedIndex(a, b, val) == -1);
+	val = 4.0;
+	assert(double_slice_SortedIndex(a, b, val) == -4);
+	slice_free(b);
+	slice_free(a);
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
@@ -284,6 +327,7 @@ int main(int argc, char *argv[])
 		test_append_11();
 		test_insert_1();
 		test_put_1();
+		test_search_1();
 	}
     
     return 0;
