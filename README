@@ -3,7 +3,7 @@
  by Sven Nilsen, 2012
  http://www.cutoutpro.com
  
- Version: 0.002 in angular degrees version notation
+ Version: 0.004 in angular degrees version notation
  http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
 
 I like to write stuff in the language I find convenient and then translate
@@ -25,14 +25,11 @@ If NDEBUG is defined, then boundary checks will not be performed at runtime.
 	len	The length of elements (can be varied).
 	cap	The capacity of the array.
 
-In this library, I chose to make all members immutable except for the 'len' member.
-This also means you can not assign a variable twice, but you can 'push', 'pop' and 'cut'.
-
 Use typedef if your slice type is a pointer type:
 
 	SLICE_TYPE_DECLARE(int*)	// WRONG
 
-	typedef int* int_t;
-	SLICE_TYPE_DECLARE(int_t)	// RIGHT
+	typedef int* int_ptr;
+	SLICE_TYPE_DECLARE(int_ptr)	// RIGHT
 
 For more information, read "slice.h".
