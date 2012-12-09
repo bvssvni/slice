@@ -267,6 +267,20 @@ void test_put_1(void)
 	slice_free(a);
 }
 
+typedef struct
+{
+	double_slice items;
+} dummy;
+
+void test_pop_2(void)
+{
+	dummy d = {.items = slice_make(double, 10)};
+	slice_push(d.items, 5);
+	double val = slice_pop((&d)->items);
+	assert(val == 5);
+	slice_free(d.items);
+}
+
 int double_Compare(const double *a, const double *b)
 {
 	double aVal = *a;
@@ -328,6 +342,7 @@ int main(int argc, char *argv[])
 		test_insert_1();
 		test_put_1();
 		test_search_1();
+		test_pop_2();
 	}
     
     return 0;

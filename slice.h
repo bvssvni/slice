@@ -137,8 +137,9 @@ _a->len += _b->len;\
 			// Pops item from end of slice.
 #define		slice_pop(a) \
 \
-({__typeof__(a) *_a = &(a); assert(_a->len > 0);\
-(--_a->len >= 0 ? _a->ptr[_a->len] : (typeof(*_a->ptr)){0}); \
+({__typeof__(a) *_a = &(a);\
+assert(_a->len > 0);\
+_a->ptr[--_a->len]; \
 })
 	
 			// Sets item at index, expands the length if necessary.
