@@ -1,5 +1,6 @@
 #if 0
 #!/bin/bash
+clear
 gcc -o slice-test *.c -Wall -Wfatal-errors -O3
 if [ "$?" = "0" ]; then
 	time ./slice-test
@@ -221,10 +222,54 @@ void test_append_11(void)
 	slice_free(b);
 }
 
+void test_insert_1(void)
+{
+	int_slice a = slice_make(int, 10);
+	slice_insert(a, 0, 2);
+	assert(a.len == 1);
+	assert(a.ptr[0] == 2);
+	slice_insert(a, 0, 1);
+	assert(a.len == 2);
+	assert(a.ptr[0] == 1);
+	assert(a.ptr[1] == 2);
+	slice_insert(a, 0, 0);
+	assert(a.ptr[0] == 0);
+	assert(a.ptr[1] == 1);
+	assert(a.ptr[2] == 2);
+	slice_free(a);
+}
+
+void test_put_1(void)
+{
+	int_slice a = slice_make(int, 10);
+	slice_push(a, 1);
+	slice_push(a, 2);
+	slice_push(a, 3);
+	int_slice b = slice_make(int, 2);
+	slice_push(b, 7);
+	slice_push(b, 8);
+	slice_put(a, 1, b);
+	assert(a.ptr[0] == 1);
+	assert(a.ptr[1] == 7);
+	assert(a.ptr[2] == 8);
+	assert(a.ptr[3] == 2);
+	assert(a.ptr[4] == 3);
+	slice_cut(a, 1, 1+2);
+	assert(a.ptr[0] == 1);
+	assert(a.ptr[1] == 2);
+	slice_put(a, 0, b);
+	assert(a.ptr[0] == 7);
+	assert(a.ptr[1] == 8);
+	assert(a.ptr[2] == 1);
+	assert(a.ptr[3] == 2);
+	slice_free(b);
+	slice_free(a);
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
-	int end = 1 << 23;
+	int end = 1 << 0; // 23;
 	for (i = 0; i < end; i++) {
 		test1();
 		test2();
@@ -237,6 +282,8 @@ int main(int argc, char *argv[])
 		test_string_array_9();
 		test_copy_10();
 		test_append_11();
+		test_insert_1();
+		test_put_1();
 	}
     
     return 0;

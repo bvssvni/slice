@@ -4,9 +4,11 @@
  by Sven Nilsen, 2012
  http://www.cutoutpro.com
  
- Version: 0.003 in angular degrees version notation
+ Version: 0.004 in angular degrees version notation
  http://isprogrammingeasy.blogspot.no/2012/08/angular-degrees-versioning-notation.html
  
+ 004	Added 'insert' and 'put' for faster insertion.
+		Replaced memcpy with memmove.
  003	Added standard headers for easier compiling.
 		Added 'check' macro that expands slice if items does not fit.
 		Added 'is_allocated' flag and 'slice_free'.
@@ -159,7 +161,29 @@ __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
     // Push items at end of slice.
 #define slice_push(a, item) do {__typeof__(a) *_a = &(a);\
 assert(_a->len < _a->cap); _a->ptr[_a->len++] = item;} while (0)
-    
+	
+	// Inserts item in slice at index.
+#define slice_insert(a, index, item) do{__typeof__(a) *_a = &(a);\
+int _index = (index);\
+assert(_a->len < _a->cap);\
+memmove(_a->ptr + (_index+1),_a->ptr + _index, (_a->len-_index)*slice_itemsize(*_a));\
+_a->ptr[_index] = (item);\
+_a->len++;\
+} while (0)
+	
+	// Puts a slice into another slice at index, opposite of _cut_.
+	// This pushes the other items toward end.
+#define slice_put(a, index, b) do{\
+__typeof__(a) *_a = &(a);\
+__typeof__(b) *_b = &(b);\
+int _index = (index);\
+assert(_a->len+_b->len <= _a->cap);\
+memmove(_a->ptr + (_index+_b->len),_a->ptr + _index, \
+(_a->len-_index)*slice_itemsize(*_a));\
+memmove(_a->ptr + _index, _b->ptr, _b->len * slice_itemsize(*_b));\
+_a->len += _b->len;\
+} while (0)
+
     // Pops item from end of slice.
 #define slice_pop(a) \
 ({__typeof__(a) *_a = &(a); assert(_a->len > 0);\
@@ -191,14 +215,14 @@ _a->len = _a->len <= _index ? _index+1 : _a->len;\
     // Copies content from _b_ into _a_ and returns number of items copied.
 	// The entries in _a_ in that range will be overwritten.
 #define slice_copy(a, b) \
-(memcpy((a).ptr, (b).ptr, slice_minlen(a,b) * slice_itemsize(b)) ? \
+(memmove((a).ptr, (b).ptr, slice_minlen(a,b) * slice_itemsize(b)) ? \
 (a).len = ((a).len >= (b).len ? (a).len : \
 (a).cap < (b).len ? (a).cap : (b).len) : 0)
     
 	// Appends content from _b_ to _a_ and returns number of items appened.
 #define slice_append(a, b) \
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
-(memcpy(_a->ptr+_a->len, _b->ptr, slice_mincap(*_a,*_b) * slice_itemsize(*_b)) ? \
+(memmove(_a->ptr+_a->len, _b->ptr, slice_mincap(*_a,*_b) * slice_itemsize(*_b)) ? \
 slice_mincap(*_a,*_b)+((_a->len += slice_mincap(*_a,*_b))&&0) : 0);})
 	
 	// Expand the slice with block if items do not fit.
@@ -215,17 +239,18 @@ do { \
 } while (0)
 	
     // Cuts a range from slice.
+	// This is the opposite from _put_.
 #define slice_cut(a, start, end) \
 do {int _start = (start);\
 int _end = (end);\
 __typeof__(a) *_a = &(a);\
-assert(_end >= _start); memcpy(_a->ptr + _start, _a->ptr + _end, \
+assert(_end >= _start); memmove(_a->ptr + _start, _a->ptr + _end, \
 slice_itemsize(a) * (_a->cap - _end)); _a->len -= _end-_start;} while (0)
     
     // Deletes item at index, decrementing the indices of the rest.
 #define slice_delete(a, index) \
 do {__typeof__(a) *_a = &(a); int _index = (index);\
-memcpy(_a->ptr + _index, _a->ptr + _index + 1, \
+memmove(_a->ptr + _index, _a->ptr + _index + 1, \
 slice_itemsize(*_a) * (_a->cap - _index - 1)); _a->len--;} while (0)
 
     // Clears all items in a slice.
@@ -237,8 +262,8 @@ memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
 #define slice_merge(a, b) \
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (__typeof__(a)){.ptr = \
-(__typeof__(_a->ptr))memcpy(_a->len + \
-(__typeof__(_a->ptr))memcpy(malloc(slice_itemsize(*_a) * \
+(__typeof__(_a->ptr))memmove(_a->len + \
+(__typeof__(_a->ptr))memmove(malloc(slice_itemsize(*_a) * \
 (_a->len + _b->len)), _a->ptr, _a->len * slice_itemsize(*_a)), \
 _b->ptr, _b->len * slice_itemsize(*_b)) - _a->len, \
 .len = _a->len + _b->len, .cap = _a->len + _b->len, .is_allocated = 1};})
