@@ -254,7 +254,6 @@ free(_a->ptr); *_a = (__typeof__(a)){};}} while (0)
 	({\
 	__typeof__(item) *_item = &(item);\
 	__typeof__(arr) *_arr = &(arr);\
-	__typeof__(f) *_f = &(f);\
 	int_slice *_sortedindices = &(sortedindices);\
 	int _start = 0;\
 	int _end = _arr->len;\
@@ -262,7 +261,7 @@ free(_a->ptr); *_a = (__typeof__(a)){};}} while (0)
 	while (_end - _start >= 1) {\
 		_mid = _start + ((_end-_start)>>1);\
 		int _index = _sortedindices->ptr[_mid];\
-		int _compare = _f(_item, &_arr->ptr[_index]);\
+		int _compare = f(_item, &_arr->ptr[_index]);\
 		if (_compare > 0) {\
 			_start = _mid + 1;\
 		} else if (_compare < 0) {\
