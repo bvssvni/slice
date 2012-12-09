@@ -43,68 +43,8 @@
  
  slice - Slices in C.
  
- Slices are a convenient way of representing a part of an array.
- They are so small in size that they can be passed by values to functions.
- The point with slices is to abstract a little from raw 
- 
- It has 3 members:
-    ptr - the pointer to the location in array.
-    len - the number of items in the slice.
-    cap - the capacity of the slice.
- 
- Declare slices of type 'int' and 'double'.
- 
-    SLICE_TYPE_DECLARE(int)
-    SLICE_TYPE_DECLARE(double)
- 
- This implementation of slices does not use garbage collection.
- The best practice is to use a main slice that cover the whole array,
- and keep track of slice until there are no more slices referring to it.
- 
-    int_slice a = slice_make(int, 10);
-    ...
-    free(a.ptr);
- 
- 'make' initializes the length of the slice to 0.
- This way you can use slices as expandable arrays up to a limit.
- 
- You can push and pop items onto a slice with boundary checks.
- 
-    slice_push(a, 2);
- 
-    item = slice_pop(a);
- 
- Pop has a tail assertion that fails if used in expression.
- 
-    if (slice_pop(a) == 0) {  // WRONG
-        ...
-    }
- 
-    item = slice_pop(a);    // RIGHT
-    if (item == 0) {
-        ...
-    }
- 
- The only member that should be modified is the 'len' member.
- 
- When appending two slices, you can either use 'copy' or 'merge'.
- 
-    int copy(a, b) - Puts items from _b_ into _a_ up to min(a.len, b.len).
-    Returns number of copied elements. If _a_ contains more items than
-	copied, the operation can be thought of as overwriting.
- 
-	int append(a, b) - Appends items from _b_ to _a_.
-	Returns the number of appened items.
- 
-    c = merge(a, b) - Creates a new array filled with content of two slices.
-    The type of slice returned is the same as the first parameter.
-    The array is dynamically allocated and must be released with free(c.ptr).
- 
- TYPICAL ERRORS
- 
-	warning: data definition has no type or storage class
- 
-		This will appear if you type SLICE_TYPE_DECLARE wrong.
+ Slices makes it easier to work with arrays in C.
+ The macroes are written in a way to behave like function calls.
  
  */
 
@@ -129,41 +69,49 @@ printf("Assertion failed: (%s), function %s, file %s, line %i.\n", \
 #cond, __FUNCTION__, __FILE__, __LINE__); exit(1);}} while (0)
 #endif
     
-    // Declare type.
-#define SLICE_TYPE_DECLARE(type) \
+			// Declare type.
+#define		slice_type(type) \
+\
 typedef struct type##_slice {\
 	int is_allocated;\
 	type * ptr;\
 	int len;\
 	int cap;\
-} type##_slice;
+} type##_slice
 
-	// Returns part of another slice.
-#define slice(a, start, end) ({\
+			// Returns part of another slice.
+#define		slice(a, start, end) ({\
+\
 __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
 (__typeof__(a)){.ptr = _a->ptr + _start, .len = _end - _start, \
 .cap = _a->cap - _start};\
 })
 
-    // Returns a part of an array.
-    // This range determine the capacity of the slice.
-#define slice_array(a, start, end) \
+			// Returns a part of an array.
+			// This range determine the capacity of the slice.
+#define		slice_array(a, start, end) \
+\
 {.ptr = (a)+(start), .len = (end)-(start), .cap = (end)-(start)}
     
-    // Declares a new array with a given capacity.
-    // The length is set to 0.
-#define slice_make(type, capacity) \
+			// Declares a new array with a given capacity.
+			// The length is set to 0.
+#define		slice_make(type, capacity) \
+\
 (type##_slice){\
 .is_allocated = 1,\
 .ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity),\
 .cap = capacity}
     
-    // Push items at end of slice.
-#define slice_push(a, item) do {__typeof__(a) *_a = &(a);\
+			// Push items at end of slice.
+#define		slice_push(a, item) \
+\
+do {__typeof__(a) *_a = &(a);\
 assert(_a->len < _a->cap); _a->ptr[_a->len++] = item;} while (0)
 	
-	// Inserts item in slice at index.
-#define slice_insert(a, index, item) do{__typeof__(a) *_a = &(a);\
+			// Inserts item in slice at index.
+#define		slice_insert(a, index, item) \
+\
+do{__typeof__(a) *_a = &(a);\
 int _index = (index);\
 assert(_a->len < _a->cap);\
 memmove(_a->ptr + (_index+1),_a->ptr + _index, (_a->len-_index)*slice_itemsize(*_a));\
@@ -171,9 +119,11 @@ _a->ptr[_index] = (item);\
 _a->len++;\
 } while (0)
 	
-	// Puts a slice into another slice at index, opposite of _cut_.
-	// This pushes the other items toward end.
-#define slice_put(a, index, b) do{\
+			// Puts a slice into another slice at index, opposite of _cut_.
+			// This pushes the other items toward end.
+#define		slice_put(a, index, b) \
+\
+do{\
 __typeof__(a) *_a = &(a);\
 __typeof__(b) *_b = &(b);\
 int _index = (index);\
@@ -184,14 +134,16 @@ memmove(_a->ptr + _index, _b->ptr, _b->len * slice_itemsize(*_b));\
 _a->len += _b->len;\
 } while (0)
 
-    // Pops item from end of slice.
-#define slice_pop(a) \
+			// Pops item from end of slice.
+#define		slice_pop(a) \
+\
 ({__typeof__(a) *_a = &(a); assert(_a->len > 0);\
 (--_a->len >= 0 ? _a->ptr[_a->len] : (typeof(*_a->ptr)){0}); \
 })
 	
-	// Sets item at index, expands the length if necessary.
-#define slice_set(a, index, item) do {\
+			// Sets item at index, expands the length if necessary.
+#define		slice_set(a, index, item) \
+do {\
 __typeof__(a) *_a = &(a);\
 int _index = (index);\
 __typeof__(item) _item = (item);\
@@ -200,33 +152,40 @@ _a->ptr[_index] = _item;\
 _a->len = _a->len <= _index ? _index+1 : _a->len;\
 } while (0)
 	
-    // Returns the item size in bytes of a slice.
-#define slice_itemsize(a) \
+			// Returns the item size in bytes of a slice.
+#define		slice_itemsize(a) \
+\
 ((unsigned long)((a).ptr + 1) - (unsigned long)((a).ptr))
 
-    // Returns the number of items in _b_ that fits in _a_.
-#define slice_minlen(a, b) \
+			// Returns the number of items in _b_ that fits in _a_.
+#define		slice_minlen(a, b) \
+\
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (_a->cap < _b->len ? _a->cap : _b->len);})
 
-#define slice_mincap(a, b) \
+			// Used internally.
+#define		slice_mincap(a, b) \
+\
 ((a).cap-(a).len < (b).len ? (a).cap-(a).len : (b).len)
 	
-    // Copies content from _b_ into _a_ and returns number of items copied.
-	// The entries in _a_ in that range will be overwritten.
-#define slice_copy(a, b) \
+			// Copies content from _b_ into _a_ and returns number of items copied.
+			// The entries in _a_ in that range will be overwritten.
+#define		slice_copy(a, b) \
+\
 (memmove((a).ptr, (b).ptr, slice_minlen(a,b) * slice_itemsize(b)) ? \
 (a).len = ((a).len >= (b).len ? (a).len : \
 (a).cap < (b).len ? (a).cap : (b).len) : 0)
     
-	// Appends content from _b_ to _a_ and returns number of items appened.
-#define slice_append(a, b) \
+			// Appends content from _b_ to _a_ and returns number of items appened.
+#define		slice_append(a, b) \
+\
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (memmove(_a->ptr+_a->len, _b->ptr, slice_mincap(*_a,*_b) * slice_itemsize(*_b)) ? \
 slice_mincap(*_a,*_b)+((_a->len += slice_mincap(*_a,*_b))&&0) : 0);})
 	
-	// Expand the slice with block if items do not fit.
-#define slice_check(type, buffer, items, block) \
+			// Expand the slice with block if items do not fit.
+#define		slice_check(type, buffer, items, block) \
+\
 do { \
 	__typeof__(buffer) *_buffer = &(buffer); \
 	int _items = (items); \
@@ -238,28 +197,32 @@ do { \
 	*_buffer = _newbuffer; \
 } while (0)
 	
-    // Cuts a range from slice.
-	// This is the opposite from _put_.
+			// Cuts a range from slice.
+			// This is the opposite from _put_.
 #define slice_cut(a, start, end) \
+\
 do {int _start = (start);\
 int _end = (end);\
 __typeof__(a) *_a = &(a);\
 assert(_end >= _start); memmove(_a->ptr + _start, _a->ptr + _end, \
 slice_itemsize(a) * (_a->cap - _end)); _a->len -= _end-_start;} while (0)
     
-    // Deletes item at index, decrementing the indices of the rest.
-#define slice_delete(a, index) \
+			// Deletes item at index, decrementing the indices of the rest.
+#define		slice_delete(a, index) \
+\
 do {__typeof__(a) *_a = &(a); int _index = (index);\
 memmove(_a->ptr + _index, _a->ptr + _index + 1, \
 slice_itemsize(*_a) * (_a->cap - _index - 1)); _a->len--;} while (0)
 
-    // Clears all items in a slice.
-#define slice_clear(a) \
+			// Clears all items in a slice.
+#define		slice_clear(a) \
+\
 do {__typeof__(a) *_a = &(a);\
 memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
     
-    // Appends two slices that must be released when no longer needed.
+			// Appends two slices that must be released when no longer needed.
 #define slice_merge(a, b) \
+\
 ({__typeof__(a) *_a = &(a); __typeof__(b) *_b = &(b);\
 (__typeof__(a)){.ptr = \
 (__typeof__(_a->ptr))memmove(_a->len + \
@@ -268,8 +231,9 @@ memset(_a->ptr, 0, slice_itemsize(*_a) * _a->len);} while (0)
 _b->ptr, _b->len * slice_itemsize(*_b)) - _a->len, \
 .len = _a->len + _b->len, .cap = _a->len + _b->len, .is_allocated = 1};})
 
-	// Releases a slice if it is allocated.
+			// Releases a slice if it is allocated.
 #define slice_free(a) \
+\
 do {__typeof__(a) *_a = &(a);\
 if (_a->is_allocated && _a->ptr != NULL) {\
 free(_a->ptr); *_a = (__typeof__(a)){};}} while (0)

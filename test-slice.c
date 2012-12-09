@@ -1,9 +1,9 @@
 #if 0
 #!/bin/bash
 clear
-gcc -o slice-test *.c -Wall -Wfatal-errors -O3
+gcc -o test-slice test-slice.c -Wall -Wfatal-errors -O3
 if [ "$?" = "0" ]; then
-	time ./slice-test
+	time ./test-slice
 fi
 exit
 #endif
@@ -16,11 +16,11 @@ exit
 
 #include "slice.h"
 
-SLICE_TYPE_DECLARE(int)
+slice_type(int);
 
 typedef char * string;
 
-SLICE_TYPE_DECLARE(string);
+slice_type(string);
 
 #define Err() do {printf("%i Error!\n", __LINE__); exit(1);} while (0)
 
