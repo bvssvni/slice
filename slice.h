@@ -100,11 +100,10 @@ __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
 ({\
 int _capacity = (capacity);\
 assert(_capacity >= 0);\
+type *_ptr = _capacity == 0 ? NULL : malloc(sizeof(type) * _capacity);\
+if (_ptr != NULL) memset(_ptr, 0, sizeof(type) * _capacity);\
 	(type##_slice){\
-.is_allocated = _capacity > 0,\
-.ptr = _capacity == 0 ? 0 : \
-memset(malloc(sizeof(type) * _capacity), 0, sizeof(type) * _capacity),\
-.cap = _capacity};})
+.is_allocated = _capacity > 0, .ptr = _ptr, .cap = _capacity};})
     
 			// Push items at end of slice.
 #define		slice_push(a, item) \
