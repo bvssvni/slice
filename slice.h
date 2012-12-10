@@ -97,10 +97,14 @@ __typeof__(a) *_a = &(a); int _start = (start); int _end = (end);\
 			// The length is set to 0.
 #define		slice_make(type, capacity) \
 \
-(type##_slice){\
-.is_allocated = 1,\
-.ptr = memset(malloc(sizeof(type) * capacity), 0, sizeof(type) * capacity),\
-.cap = capacity}
+({\
+int _capacity = (capacity);\
+assert(_capacity >= 0);\
+	(type##_slice){\
+.is_allocated = _capacity > 0,\
+.ptr = _capacity == 0 ? 0 : \
+memset(malloc(sizeof(type) * _capacity), 0, sizeof(type) * _capacity),\
+.cap = _capacity};})
     
 			// Push items at end of slice.
 #define		slice_push(a, item) \

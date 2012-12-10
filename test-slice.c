@@ -323,6 +323,15 @@ void test_search_1()
 	slice_free(a);
 }
 
+void test_make_2(void)
+{
+	// Make sure free can be called twice without releasing memory.
+	int_slice a = slice_make(int, 0);
+	slice_free(a);
+	assert(a.ptr == NULL);
+	slice_free(a);
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
@@ -343,6 +352,7 @@ int main(int argc, char *argv[])
 		test_put_1();
 		test_search_1();
 		test_pop_2();
+		test_make_2();
 	}
     
     return 0;
